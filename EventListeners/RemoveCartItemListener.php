@@ -44,27 +44,25 @@ class RemoveCartItemListener implements EventSubscriberInterface
     {
         $cartItem = CartItemQuery::create()->findOneById($cartEvent->getCartItemId());
 
-        if (null === $cartItem) {
-            return ;
-        }
+        if (null !== $cartItem) {
+            $consumedCoupons = $this->request->getSession()->getConsumedCoupons();
 
-        $consumedCoupons = $this->request->getSession()->getConsumedCoupons();
+            if (!isset($consumedCoupons) || !$consumedCoupons) {
+                $consumedCoupons = array();
+            }
 
-        if (!isset($consumedCoupons) || !$consumedCoupons) {
-            $consumedCoupons = array();
-        }
+            foreach ($consumedCoupons as $key => $value) {
+                if (CouponPack::isCouponTypeOfferedProduct($value)) {
+                    $coupon = CouponQuery::create()->findOneByCode($value);
+                    $effects = $coupon->unserializeEffects($coupon->getSerializedEffects());
 
-        foreach ($consumedCoupons as $key => $value) {
-            if (CouponPack::isCouponTypeOfferedProduct($value)) {
-                $coupon = CouponQuery::create()->findOneByCode($value);
-                $effects = $coupon->unserializeEffects($coupon->getSerializedEffects());
-
-                if ($effects['offered_product_id'] == $cartItem->getProductId()) {
-                    unset($consumedCoupons[$key]);
+                    if ($effects['offered_product_id'] == $cartItem->getProductId()) {
+                        unset($consumedCoupons[$key]);
+                    }
                 }
             }
-        }
 
-        $this->request->getSession()->setConsumedCoupons($consumedCoupons);
+            $this->request->getSession()->setConsumedCoupons($consumedCoupons);
+        }
     }
 }
