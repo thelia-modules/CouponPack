@@ -71,19 +71,33 @@ class CartContainsBrands extends ConditionAbstract
     {
         $cartItems = $this->facade->getCart()->getCartItems();
 
-        /** @var CartItem $cartItem */
-        foreach ($cartItems as $cartItem) {
-            $brand = $cartItem->getProduct()->getBrand();
-
-            $brandInCart = $this->conditionValidator->variableOpComparison(
-                $brand->getId(),
-                $this->operators[self::BRAND_LIST],
-                $this->values[self::BRAND_LIST]
-            );
-
-            if ($brandInCart) {
-                return true;
+        if ($this->operators[self::BRAND_LIST] == Operators::IN) {
+            foreach ($cartItems as $cartItem) {
+                if ($this->conditionValidator->variableOpComparison(
+                    $cartItem->getProduct()->getBrand()->getId(),
+                    $this->operators[self::BRAND_LIST],
+                    $this->values[self::BRAND_LIST]
+                )) {
+                    return true;
+                }
             }
+
+            return false;
+        }
+
+        if ($this->operators[self::BRAND_LIST] == Operators::OUT) {
+            /** @var CartItem $cartItem */
+            foreach ($cartItems as $cartItem) {
+                if (!$this->conditionValidator->variableOpComparison(
+                    $cartItem->getProduct()->getBrand()->getId(),
+                    $this->operators[self::BRAND_LIST],
+                    $this->values[self::BRAND_LIST]
+                )) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         return false;
