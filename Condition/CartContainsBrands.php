@@ -72,35 +72,29 @@ class CartContainsBrands extends ConditionAbstract
         $cartItems = $this->facade->getCart()->getCartItems();
 
         if ($this->operators[self::BRAND_LIST] == Operators::IN) {
-            foreach ($cartItems as $cartItem) {
-                if ($this->conditionValidator->variableOpComparison(
-                    $cartItem->getProduct()->getBrand()->getId(),
-                    $this->operators[self::BRAND_LIST],
-                    $this->values[self::BRAND_LIST]
-                )) {
-                    return true;
-                }
-            }
-
-            return false;
+            $comparisonOkReturn = true;
+        } elseif ($this->operators[self::BRAND_LIST] == Operators::OUT) {
+            $comparisonOkReturn = false;
+        } else {
+            throw new \Exception('The operator must be : IN or OUT');
         }
 
-        if ($this->operators[self::BRAND_LIST] == Operators::OUT) {
-            /** @var CartItem $cartItem */
-            foreach ($cartItems as $cartItem) {
-                if (!$this->conditionValidator->variableOpComparison(
-                    $cartItem->getProduct()->getBrand()->getId(),
-                    $this->operators[self::BRAND_LIST],
-                    $this->values[self::BRAND_LIST]
-                )) {
-                    return false;
-                }
+        /** @var CartItem $cartItem */
+        foreach ($cartItems as $cartItem) {
+            if (null === $cartItem->getProduct()->getBrand()) {
+                continue;
             }
-
-            return true;
+            $comparison = $this->conditionValidator->variableOpComparison(
+                $cartItem->getProduct()->getBrand()->getId(),
+                $this->operators[self::BRAND_LIST],
+                $this->values[self::BRAND_LIST]
+            );
+            if ($comparison === $comparisonOkReturn) {
+                return $comparisonOkReturn;
+            }
         }
 
-        return false;
+        return !$comparisonOkReturn;
     }
 
     public function getName()
