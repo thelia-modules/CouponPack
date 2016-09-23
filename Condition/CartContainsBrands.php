@@ -71,14 +71,6 @@ class CartContainsBrands extends ConditionAbstract
     {
         $cartItems = $this->facade->getCart()->getCartItems();
 
-        if ($this->operators[self::BRAND_LIST] == Operators::IN) {
-            $comparisonOkReturn = true;
-        } elseif ($this->operators[self::BRAND_LIST] == Operators::OUT) {
-            $comparisonOkReturn = false;
-        } else {
-            throw new \Exception('The operator must be : IN or OUT');
-        }
-
         /** @var CartItem $cartItem */
         foreach ($cartItems as $cartItem) {
             if (null === $cartItem->getProduct()->getBrand()) {
@@ -89,12 +81,12 @@ class CartContainsBrands extends ConditionAbstract
                 $this->operators[self::BRAND_LIST],
                 $this->values[self::BRAND_LIST]
             );
-            if ($comparison === $comparisonOkReturn) {
-                return $comparisonOkReturn;
+            if ($comparison) {
+                return true;
             }
         }
 
-        return !$comparisonOkReturn;
+        return false;
     }
 
     public function getName()
