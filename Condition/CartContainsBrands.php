@@ -9,6 +9,9 @@
 namespace CouponPack\Condition;
 
 use CouponPack\CouponPack;
+use Exception;
+use Propel\Runtime\Exception\PropelException;
+use SmartyException;
 use Thelia\Condition\Implementation\ConditionAbstract;
 use Thelia\Condition\Operators;
 use Thelia\Coupon\FacadeInterface;
@@ -19,7 +22,7 @@ use Thelia\Model\CartItem;
 
 class CartContainsBrands extends ConditionAbstract
 {
-    const BRAND_LIST = 'brands';
+    public const BRAND_LIST = 'brands';
 
     public function __construct(FacadeInterface $facade)
     {
@@ -33,17 +36,17 @@ class CartContainsBrands extends ConditionAbstract
         parent::__construct($facade);
     }
 
-    public function getServiceId()
+    public function getServiceId(): string
     {
         return 'thelia.condition.cart_contains_brands';
     }
 
-    public function setValidatorsFromForm(array $operators, array $values)
+    public function setValidatorsFromForm(array $operators, array $values): CartContainsBrands|static
     {
         $this->checkComparisonOperatorValue($operators, self::BRAND_LIST);
 
         // Use default values if data is not defined.
-        if (! isset($operators[self::BRAND_LIST]) || ! isset($values[self::BRAND_LIST])) {
+        if (!isset($operators[self::BRAND_LIST], $values[self::BRAND_LIST])) {
             $operators[self::BRAND_LIST] = Operators::IN;
             $values[self::BRAND_LIST] = [];
         }
@@ -56,7 +59,7 @@ class CartContainsBrands extends ConditionAbstract
         // Check that at least one brand is selected
         if (empty($values[self::BRAND_LIST])) {
             throw new InvalidConditionValueException(
-                get_class(),
+                __CLASS__,
                 self::BRAND_LIST
             );
         }
@@ -67,7 +70,11 @@ class CartContainsBrands extends ConditionAbstract
         return $this;
     }
 
-    public function isMatching()
+    /**
+     * @throws PropelException
+     * @throws Exception
+     */
+    public function isMatching(): bool
     {
         $cartItems = $this->facade->getCart()->getCartItems();
 
@@ -89,7 +96,7 @@ class CartContainsBrands extends ConditionAbstract
         return false;
     }
 
-    public function getName()
+    public function getName(): string
     {
         return $this->translator->trans(
             'Cart contains brands condition',
@@ -98,18 +105,16 @@ class CartContainsBrands extends ConditionAbstract
         );
     }
 
-    public function getToolTip()
+    public function getToolTip(): string
     {
-        $toolTip = $this->translator->trans(
+        return $this->translator->trans(
             'The coupon applies if the cart contains at least one product of the selected brands',
             [],
             CouponPack::DOMAIN_NAME
         );
-
-        return $toolTip;
     }
 
-    protected function generateInputs()
+    protected function generateInputs(): array
     {
         return array(
             self::BRAND_LIST => array(
@@ -120,7 +125,7 @@ class CartContainsBrands extends ConditionAbstract
         );
     }
 
-    public function getSummary()
+    public function getSummary(): string
     {
         $i18nOperator = Operators::getI18n(
             $this->translator,
@@ -140,7 +145,7 @@ class CartContainsBrands extends ConditionAbstract
             $brandStrList = rtrim($brandStrList, ', ');
         }
 
-        $toolTip = $this->translator->trans(
+        return $this->translator->trans(
             'At least one of cart products brand is %op% <strong>%brand_list%</strong>',
             [
                 '%brand_list%' => $brandStrList,
@@ -148,18 +153,19 @@ class CartContainsBrands extends ConditionAbstract
             ],
             CouponPack::DOMAIN_NAME
         );
-
-        return $toolTip;
     }
 
-    public function drawBackOfficeInputs()
+    /**
+     * @throws SmartyException
+     */
+    public function drawBackOfficeInputs(): string
     {
         return $this->facade->getParser()->render(
             'coupon/condition-fragments/cart-contains-brands-condition.html',
             [
                 'operatorSelectHtml' => $this->drawBackOfficeInputOperators(self::BRAND_LIST),
                 'brand_field_name' => self::BRAND_LIST,
-                'values' => isset($this->values[self::BRAND_LIST]) ? $this->values[self::BRAND_LIST] : array()
+                'values' => $this->values[self::BRAND_LIST] ?? array()
             ]
         );
     }

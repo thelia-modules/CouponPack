@@ -3,22 +3,5 @@
 <config xmlns="http://thelia.net/schema/dic/config"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://thelia.net/schema/dic/config http://thelia.net/schema/dic/config/thelia-1.0.xsd">
-    <services>
-        <service id="remove.cart.item.listener" class="CouponPack\EventListeners\RemoveCartItemListener">
-            <argument type="service" id="request_stack"/>
-            <tag name="kernel.event_subscriber"/>
-        </service>
 
-        <!--Conditions-->
-        <service id="thelia.condition.cart_contains_brands" class="CouponPack\Condition\CartContainsBrands">
-            <argument type="service" id="thelia.facade" />
-            <tag name="thelia.coupon.addCondition"/>
-        </service>
-
-        <!--Coupon Types-->
-        <service id="coupon.type.offered_product" class="CouponPack\Coupon\Type\OfferedProduct">
-            <argument type="service" id="thelia.facade" />
-            <tag name="thelia.coupon.addCoupon"/>
-        </service>
-    </services>
 </config>

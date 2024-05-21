@@ -13,6 +13,7 @@
 namespace CouponPack\Coupon\Type;
 
 use CouponPack\CouponPack;
+use Propel\Runtime\Exception\PropelException;
 use Thelia\Core\Event\Cart\CartEvent;
 use Thelia\Core\Event\TheliaEvents;
 use Thelia\Core\Translation\Translator;
@@ -22,44 +23,44 @@ use Thelia\Model\ProductQuery;
 
 class OfferedProduct extends AbstractRemove
 {
-    const OFFERED_PRODUCT_ID  = 'offered_product_id';
-    const OFFERED_CATEGORY_ID = 'offered_category_id';
+    public const OFFERED_PRODUCT_ID  = 'offered_product_id';
+    public const OFFERED_CATEGORY_ID = 'offered_category_id';
 
-    /** @var string Service Id  */
+    /** @var string ServiceId  */
     protected $serviceId = CouponPack::OFFERED_PRODUCT_SERVICE_ID;
 
-    protected $offeredProductId;
-    protected $offeredCategoryId;
+    protected int $offeredProductId;
+    protected int $offeredCategoryId;
 
-    protected function getSessionVarName()
+    protected function getSessionVarName(): string
     {
         return "coupon.offered_product.cart_items." . $this->getCode();
     }
 
-    public function getName()
+    public function getName(): string
     {
         return $this->facade
             ->getTranslator()
             ->trans('Offer a product', array(), CouponPack::DOMAIN_NAME);
     }
 
-    public function getToolTip()
+    public function getToolTip(): string
     {
         return '';
     }
 
-    public function getCartItemDiscount(CartItem $cartItem)
+    public function getCartItemDiscount(CartItem $cartItem): int
     {
         return 0;
     }
 
-    public function setFieldsValue($effects)
+    public function setFieldsValue($effects): void
     {
         $this->offeredProductId = $effects[self::OFFERED_PRODUCT_ID];
         $this->offeredCategoryId = $effects[self::OFFERED_CATEGORY_ID];
     }
 
-    public function drawBackOfficeInputs()
+    public function drawBackOfficeInputs(): string
     {
         return $this->drawBaseBackOfficeInputs("coupon/type-fragments/offered-product.html", [
             'offered_category_field_name' => $this->makeCouponFieldName(self::OFFERED_CATEGORY_ID),
@@ -70,7 +71,10 @@ class OfferedProduct extends AbstractRemove
         ]);
     }
 
-    public function exec()
+    /**
+     * @throws PropelException
+     */
+    public function exec(): float|int
     {
         $discount = 0;
 
@@ -80,8 +84,8 @@ class OfferedProduct extends AbstractRemove
 
         /** @var CartItem $cartItem */
         foreach ($cartItems as $cartItem) {
-            if ($cartItem->getProduct()->getId() == $this->offeredProductId) {
-                $isInCartOfferedProduct = true; // at this point the offeredProduct is already in the $cart
+            if ($cartItem->getProduct()->getId() === $this->offeredProductId) {
+                $isInCartOfferedProduct = true; // at this point, the offeredProduct is already in the $cart
 
                 if (! $cartItem->getPromo() || $this->isAvailableOnSpecialOffers()) {
                     $discount += $cartItem->getRealTaxedPrice($this->facade->getDeliveryCountry());
@@ -101,7 +105,7 @@ class OfferedProduct extends AbstractRemove
             $cartEvent->setProductSaleElementsId($freeProduct->getDefaultSaleElements()->getId());
             $cartEvent->setProduct($this->offeredProductId);
 
-            $this->facade->getDispatcher()->dispatch(TheliaEvents::CART_ADDITEM, $cartEvent);
+            $this->facade->getDispatcher()->dispatch($cartEvent, TheliaEvents::CART_ADDITEM);
 
             $freeProductCartItem = $cartEvent->getCartItem();
 
@@ -111,12 +115,12 @@ class OfferedProduct extends AbstractRemove
         return $discount;
     }
 
-    protected function checkCouponFieldValue($fieldName, $fieldValue)
+    protected function checkCouponFieldValue($fieldName, $fieldValue): string
     {
-        $this->checkBaseCouponFieldValue($fieldName, $fieldValue);
+        $fieldValue = $this->checkBaseCouponFieldValue($fieldName, $fieldValue);
 
         if ($fieldName === self::OFFERED_PRODUCT_ID) {
-            if (floatval($fieldValue) < 0) {
+            if ((float)$fieldValue < 0) {
                 throw new \InvalidArgumentException(
                     Translator::getInstance()->trans(
                         'Please select the offered product',
@@ -140,7 +144,7 @@ class OfferedProduct extends AbstractRemove
         return $fieldValue;
     }
 
-    protected function getFieldList()
+    protected function getFieldList(): array
     {
         return  $this->getBaseFieldList([self::OFFERED_CATEGORY_ID, self::OFFERED_PRODUCT_ID]);
     }
