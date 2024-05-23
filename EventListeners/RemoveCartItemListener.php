@@ -14,33 +14,31 @@ namespace CouponPack\EventListeners;
 
 use CouponPack\CouponPack;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Thelia\Core\Event\Cart\CartEvent;
 use Thelia\Core\Event\TheliaEvents;
-use Thelia\Core\HttpFoundation\Request;
-use Thelia\Model\Base\CartItem;
 use Thelia\Model\CartItemQuery;
 use Thelia\Model\CouponQuery;
-use Thelia\Model\Product;
 
 class RemoveCartItemListener implements EventSubscriberInterface
 {
     /** @var  Request */
-    protected $request;
+    protected Request $request;
 
     public function __construct(RequestStack $requestStack)
     {
         $this->request = $requestStack->getCurrentRequest();
     }
 
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return array(
             TheliaEvents::CART_DELETEITEM => array('removeCouponFromSession', 300)
         );
     }
 
-    public function removeCouponFromSession(CartEvent $cartEvent)
+    public function removeCouponFromSession(CartEvent $cartEvent): void
     {
         $cartItem = CartItemQuery::create()->findOneById($cartEvent->getCartItemId());
 
@@ -54,9 +52,9 @@ class RemoveCartItemListener implements EventSubscriberInterface
             foreach ($consumedCoupons as $key => $value) {
                 if (CouponPack::isCouponTypeOfferedProduct($value)) {
                     $coupon = CouponQuery::create()->findOneByCode($value);
-                    $effects = $coupon->unserializeEffects($coupon->getSerializedEffects());
+                    $effects = $coupon?->unserializeEffects($coupon?->getSerializedEffects());
 
-                    if ($effects['offered_product_id'] == $cartItem->getProductId()) {
+                    if ($effects['offered_product_id'] === $cartItem->getProductId()) {
                         unset($consumedCoupons[$key]);
                     }
                 }
